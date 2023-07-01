@@ -3,6 +3,8 @@
     public enum ErrorCode
     {
         ValidationError,
-        NotFound
+        NotFound,
+        EmailAndPhoneNumberNull,
+        DBError
     }
 }
