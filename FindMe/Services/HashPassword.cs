@@ -2,11 +2,11 @@
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using System.Security.Cryptography;
 
-namespace FindMe.Utils
+namespace FindMe.Services
 {
-    public class PasswordUtils/*: IHashedPassword*/
+    public class HashPassword : IHashPassword
     {
-        public static HashedPassword GetHashedPassword(string password)
+        public SaltHashedPassword GetHashedPassword(string password)
         {
             byte[] salt = RandomNumberGenerator.GetBytes(128 / 8);
             string hashed = Convert.ToBase64String(KeyDerivation.Pbkdf2(
@@ -16,7 +16,7 @@ namespace FindMe.Utils
                             iterationCount: 100000,
                             numBytesRequested: 256 / 8));
 
-            return new HashedPassword(salt, hashed);
+            return new SaltHashedPassword(salt, hashed);
         }
     }
 }

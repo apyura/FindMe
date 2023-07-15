@@ -1,4 +1,4 @@
-﻿namespace FindMe.Models
+﻿namespace FindMe.DTO
 {
     public class UserInfoDTO
     {

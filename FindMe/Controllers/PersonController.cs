@@ -1,8 +1,6 @@
 ﻿using FindMe.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Identity.Client;
 
 namespace FindMe.Controllers
 {
@@ -79,8 +77,6 @@ namespace FindMe.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id, [FromBody] Person person)
         {
-
-            //softdelete
             var checkedPerson = await db.People.FirstOrDefaultAsync(x => x.PersonId == person.PersonId);
 
             if (checkedPerson == null)

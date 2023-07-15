@@ -1,11 +1,6 @@
-﻿using AutoMapper;
-using FindMe.DTO;
-using FindMe.Error;
-using FindMe.Models;
-using FindMe.Utils;
+﻿using FindMe.DTO;
+using FindMe.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Security.Cryptography;
 
 namespace FindMe.Controllers
 {
@@ -13,138 +8,84 @@ namespace FindMe.Controllers
     [ApiController]
     public class UsersController : ControllerBase
     {
-        ApplicationContext db;
-        private readonly IMapper mapper;
+        //private readonly IMapper mapper;
+        private readonly IUserService _userService;
 
-        public UsersController(ApplicationContext context, IMapper mapper)
+        public UsersController(IUserService userService)
         {
-            db = context;
-            this.mapper = mapper;
-
-            if (!db.Users.Any())
-            {
-                db.Users.Add(new User { Email = "Tom33@gmail.com", Salt = RandomNumberGenerator.GetBytes(128 / 8), Hash = "dertyujkii", PhoneNumber = "885521477"});
-
-                db.SaveChanges();
-            }
+            _userService = userService;
         }
 
         // GET: api/<UsersController>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<UserInfoDTO>>> Get()
+        public async Task<ActionResult<List<UserInfoDTO>>> Get()
         {
-            return await db.Users
-                           .Where(p => p.Active)
-                           .Select(p => mapper.Map<UserInfoDTO>(p))
-                           .ToListAsync();
+            var users = await _userService.GetAllUsers();
+            return new ObjectResult(users.Data);
         }
 
-        // GET api/users/5
+        //// GET api/users/5
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(int id)
         {
-            var user = await db.Users.FirstOrDefaultAsync(x => x.Id == id);
-            if (user == null)
+            var result = await _userService.GetUserById(id);
+            if(result.Error != null)
             {
-                return NotFound("The user is not found.");
+                return BadRequest(result.Error);
             }
-
-            return new ObjectResult(mapper.Map<UserInfoDTO>(user));
+           
+            return new ObjectResult(result.Data);
         }
 
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] UserDTO user)
         {
-            if(user.Email == null && user.PhoneNumber == null)
+            var result = await _userService.AddNewUser(user);
+
+            if(result.Error != null)
             {
-                return BadRequest(Result<UserDTO>.GetError(ErrorCode.NotFound, "Enter email or phone number."));
+                return BadRequest(result.Error);
             }
-
-            var hashedPassword = PasswordUtils.GetHashedPassword(user.Password);
-
-            var newUser = mapper.Map<User>(user);
-            newUser.Salt = hashedPassword.salt;
-            newUser.Hash = hashedPassword.hashed;
-
-            try
-            {
-                db.Users.Add(newUser);
-                await db.SaveChangesAsync();
-            }
-            catch(DbUpdateException e)
-            {
-                return BadRequest(e.Message);
-            }
-
-            return new ObjectResult(user);
+            return new ObjectResult(result.Data);
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Put(int id, [FromBody] UserDTO user)
         {
-            if (user.Email == null && user.PhoneNumber == null)
+            var result = await _userService.UpdateUser(id, user);
+            if (result.Error != null)
             {
-                return BadRequest("Enter email or phone number.");
+                return BadRequest(result.Error);
             }
 
-            var checkedUser = await db.Users
-                                      .Where(x => x.Id == id && x.Active)
-                                      .Select(x => new { x.CreatedDate, x.Id })
-                                      .FirstOrDefaultAsync();
-
-            if (checkedUser == null)
-            {
-                return NotFound("The user is not found.");
-            }
-
-            var userToUpdate = mapper.Map<User>(user);
-            userToUpdate.Id = id;
-            userToUpdate.CreatedDate = checkedUser.CreatedDate;
-
-            try
-            {
-                db.Users.Update(userToUpdate);
-                await db.SaveChangesAsync();
-
-                return Ok(userToUpdate);
-            }
-            catch (DbUpdateException e)
-            {
-                return BadRequest(e.Message);
-            }
+            return new ObjectResult(result.Data);
         }
 
         [HttpPatch("{id}")]
         public async Task<IActionResult> Activate(int id)
         {
-            var checkedUser = await db.Users.FirstOrDefaultAsync(x => x.Id == id);
+            var result = await _userService.ActivateUser(id);
 
-            if (checkedUser == null)
+            if (result.Error != null)
             {
-                return NotFound("The user is not found.");
+                return BadRequest(result.Error);
             }
 
-            checkedUser.Active = true;
-            await db.SaveChangesAsync();
-
-            return Ok(mapper.Map<UserInfoDTO>(checkedUser));
+            return new ObjectResult(result.Data);
         }
 
         //// DELETE api/<UsersController>/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var userToDelete = await db.Users.FirstOrDefaultAsync(x => x.Id == id);
+            var result = await _userService.DeleteUser(id);
 
-            if(userToDelete == null)
+            if (result.Error != null)
             {
-                return NotFound("The user is not found.");
+                return BadRequest(result.Error);
             }
 
-            userToDelete.Active = false;
-            await db.SaveChangesAsync();
-
-            return Ok(mapper.Map<UserInfoDTO>(userToDelete));
+            return new ObjectResult(result.Data);
         }
     }
 }

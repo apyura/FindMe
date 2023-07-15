@@ -1,11 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 
 namespace FindMe.Models
 {
     public class ApplicationContext : DbContext
     {
-        
         public ApplicationContext(DbContextOptions<ApplicationContext> options)
             :base(options)
         {

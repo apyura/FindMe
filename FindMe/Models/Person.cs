@@ -1,6 +1,6 @@
 ﻿namespace FindMe.Models
 {
-    public class Person
+    public class Person : BaseEntity
     {
         public int PersonId { get; set; }
         public string? FirstName { get; set; }
